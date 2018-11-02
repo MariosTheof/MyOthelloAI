@@ -21,6 +21,11 @@ public class Main {
         board.placePiece(row - 1,col - 1 ); // Για να λογικευτούν οι μεταβλητές
         board.printBoard();
         
+        if (board.finished() == true) {
+        	System.out.println("THE WINNER IS : " + board.winner());
+        	gameContinues = false;
+        }
+        
       }
       scan.close();
   }

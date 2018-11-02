@@ -4,15 +4,14 @@ public class Board{
 
   public static enum Piece{
       BLACK, // ίσως τα αλλάξω σε '1' ή '-1' λόγω ui
-      WHITE,
-      EMPTY;
+      WHITE;
   }
 
   private Piece[][] board;
-
   private Piece currentPlayerPiece;
-
-  //////////////////////////////////////////////////////////////////////////
+  private int counter;
+  private int blackPoints;
+  private int whitePoints;
   static class Point {
     public final int row;
     public final int col;
@@ -49,7 +48,7 @@ public class Board{
 
            Piece piece = board[row][col]; 
            // empty cell
-           if (piece == Piece.EMPTY || piece == null) // fillArray with EMPTY or use NULL
+           if (piece == null) // fillArray with EMPTY or use NULL
               break;
               // handler can stop iteration
            if (handler.handleCell(row, col, piece) == false)
@@ -130,6 +129,11 @@ public class Board{
     return false;
   }
   
+  /**
+   * @param row
+   * @param col
+   * Flips the pieces by iterating the board, in order to replace them with the appropriate colour tile.
+   */
   private void flipPieces(int row, int col) {
 	  Piece otherPiece = ( currentPlayerPiece == Piece.BLACK ) ? Piece.WHITE : Piece.BLACK;
 	  Point start = new Point(row,col);
@@ -140,13 +144,13 @@ public class Board{
   }
 
 
-
-  /////////////////////////////////////////////////////////////////////////
-
   /*Αρχικοποίηση του πινακα*/
   public Board(){
     this.board = new Piece[8][8];
     this.currentPlayerPiece = Piece.BLACK;
+    this.counter = 4;
+    this.blackPoints = 2;
+    this.whitePoints = 2;
     // Αρχικές θέσεις
   //  fillArray(this.board);
     this.board[3][3] = Piece.WHITE;
@@ -155,17 +159,6 @@ public class Board{
     this.board[4][4] = Piece.WHITE;
      
   }
-
-  /**
-   * 
-   * @param pieceArray
-   * Fills a multidimensionalArray with Piece.EMPTY
-   */
-  public void fillArray(Piece[][] pieceArray){
-      for (int i = 0; i < pieceArray.length; i++){
-          Arrays.fill(pieceArray[i], Piece.EMPTY);
-      }
-  }
   
   public boolean placePiece(int i, int j) {
     if (this.checkLegalPlay(i,j)) {
@@ -173,6 +166,8 @@ public class Board{
       flipPieces(i,j);
       //updateBoard(i, j); // χρειάζονται τα updates ;;;;
       changeTurn();
+      this.counter++;
+      updatePoints();
       return true;
     } else {
       System.out.println("Illegal piece placement \n");
@@ -195,9 +190,42 @@ public class Board{
       currentPlayerPiece = Piece.BLACK;
     }
   }
+ 
+  public boolean finished(){
+	if(this.counter > 63 /* || legalMovesCounter == 0 */){
+		return true;
+	}else{
+		return false;
+	}
+  }
 
-//  public void winner
-
+  private void updatePoints(){
+	int white = 0;
+	int black = 0;
+	for(int i = 0; i < 8; i++){
+		for(int j = 0; j < 8; j++){
+			if(this.board[i][j] == Piece.BLACK){
+				black++;
+			}
+			else if(this.board[i][j] == Piece.WHITE){
+				white++;
+			}
+		}
+	}
+	this.blackPoints = black;
+	this.whitePoints = white;
+	}
+  
+  public String winner(){
+	if(this.blackPoints > this.whitePoints){
+		return "BLACK";
+	}else if (this.blackPoints < this.whitePoints){
+		return "WHITE";
+	}else{
+		return null;
+	}
+  }
+  
   /*Εκτυπώνει τον πίνακα στο cmd*/
   public void printBoard(){
     System.out.println("***********************************\n");
