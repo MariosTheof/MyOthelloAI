@@ -47,19 +47,19 @@ public class Board{
          isValidPosition(row,col);
          row += step.row, col += step.col) {
 
-           Piece piece = board[row][col]; // θέλει get ;?
+           Piece piece = board[row][col]; 
            // empty cell
-           if (piece == Piece.EMPTY)
+           if (piece == Piece.EMPTY || piece == null) // fillArray with EMPTY or use NULL
               break;
               // handler can stop iteration
-           if (!handler.handleCell(row, col, piece))
+           if (handler.handleCell(row, col, piece) == false)
               break;
     }
   }
 
   static class CheckCellHandler implements CellHandler {
     private final Piece otherPiece;
-    private boolean hasOtherPieces = false;
+    private boolean directionHasOpponentsPlayerPiece = false;
     private boolean endsWithMine = false;
 
     public CheckCellHandler(Piece otherPiece) {
@@ -69,16 +69,16 @@ public class Board{
     @Override
     public boolean handleCell(int row, int column, Piece piece) {
         if (piece == otherPiece) {
-            hasOtherPieces = true;
+        	directionHasOpponentsPlayerPiece = true; 
             return true;
         } else {
-            endsWithMine = true;
+            endsWithMine = true; 
             return false;
         }
     }
 
     public boolean isGoodMove() {
-        return hasOtherPieces && endsWithMine;
+        return directionHasOpponentsPlayerPiece && endsWithMine;
     }
 
     }
@@ -118,7 +118,7 @@ public class Board{
   /*implement CheckCellHandler and iterate
   through all possible directions to see if we can flip in that direction*/
   private boolean checkLegalPlay(int row, int col) {
-    Piece otherPiece = ( board[row][col] == Piece.BLACK ) ? Piece.WHITE : Piece.BLACK;
+    Piece otherPiece = ( currentPlayerPiece == Piece.BLACK ) ? Piece.WHITE : Piece.BLACK;
     Point start = new Point(row, col);
     for (Point step : possibleDirections) {
         // handler is stateful so create new for each direction
@@ -128,6 +128,15 @@ public class Board{
             return true;
     }
     return false;
+  }
+  
+  private void flipPieces(int row, int col) {
+	  Piece otherPiece = ( currentPlayerPiece == Piece.BLACK ) ? Piece.WHITE : Piece.BLACK;
+	  Point start = new Point(row,col);
+	  for (Point step: possibleDirections) {
+		  FlipCellHandler flipCellHandler = new FlipCellHandler(currentPlayerPiece, otherPiece);
+		  iterateCells(start,step,flipCellHandler);
+	  }
   }
 
 
@@ -139,16 +148,29 @@ public class Board{
     this.board = new Piece[8][8];
     this.currentPlayerPiece = Piece.BLACK;
     // Αρχικές θέσεις
-
+  //  fillArray(this.board);
     this.board[3][3] = Piece.WHITE;
     this.board[3][4] = Piece.BLACK;
     this.board[4][3] = Piece.BLACK;
     this.board[4][4] = Piece.WHITE;
+     
   }
 
+  /**
+   * 
+   * @param pieceArray
+   * Fills a multidimensionalArray with Piece.EMPTY
+   */
+  public void fillArray(Piece[][] pieceArray){
+      for (int i = 0; i < pieceArray.length; i++){
+          Arrays.fill(pieceArray[i], Piece.EMPTY);
+      }
+  }
+  
   public boolean placePiece(int i, int j) {
     if (this.checkLegalPlay(i,j)) {
       this.board[i][j] = this.currentPlayerPiece;
+      flipPieces(i,j);
       //updateBoard(i, j); // χρειάζονται τα updates ;;;;
       changeTurn();
       return true;
@@ -179,7 +201,7 @@ public class Board{
   /*Εκτυπώνει τον πίνακα στο cmd*/
   public void printBoard(){
     System.out.println("***********************************\n");
-    System.out.println("|   || 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | \n");
+    System.out.println("|   || 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | ");
     for (int row = 0; row <= 7; row++){
       System.out.print("| " + (row + 1) + " |");
       for (int col = 0; col <= 7; col++){

@@ -22,5 +22,6 @@ public class Main {
         board.printBoard();
         
       }
+      scan.close();
   }
 }
