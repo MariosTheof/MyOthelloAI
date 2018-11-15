@@ -1,9 +1,11 @@
 package Othello;
 
+import java.lang.reflect.Array;
 import java.util.*;
 
-// TODO add evaluate() method inside Board.java
-// TODO check if evaluation functions work, namely stability(), mobility()
+// TODO stability() returns 0; needs fixing
+// TODO copyBoard() probably needs improvement and tweaking // updatesBoard
+// TODO squareWeights()
 
 public class Board{
 
@@ -17,6 +19,7 @@ public class Board{
 	private int counter;
 	public int numberOfWhiteDisks;
 	public int numberOfBlackDisks;
+	
 
 	Point topLeftStartingPointDownDir = new Point(0,0);
 	Point topLeftStartingPointRightDir = new Point(0,0);
@@ -216,7 +219,8 @@ public class Board{
 
 	/*implement CheckCellHandler and iterate
   through all possible directions to see if we can flip in that direction*/
-	boolean checkLegalPlay(int row, int col) {
+ 	int checkLegalPlay(int row, int col) {
+		int checkLegalPlay = 0 ;
 		Piece otherPiece = ( currentPlayerPiece == Piece.BLACK ) ? Piece.WHITE : Piece.BLACK;
 		Point start = new Point(row, col);
 		for (Point step : possibleDirections) {
@@ -224,9 +228,10 @@ public class Board{
 			CheckCellHandler checkCellHandler = new CheckCellHandler(otherPiece);
 			iterateCells(start, step, checkCellHandler);
 			if (checkCellHandler.isGoodMove())
-				return true;
+				checkLegalPlay++;
+				
 		}
-		return false;
+		return checkLegalPlay;
 	}
 
 	/**
@@ -263,13 +268,17 @@ public class Board{
 	public Piece[][] getBoard() {
 		return board;
 	}
-
+	
+	private int getCounter() {
+		return this.counter;
+	}
+	
 	public void setBoard(Piece[][] board) {
 		this.board = board;
 	}
 
 	public boolean placePiece(int i, int j) {
-		if (this.checkLegalPlay(i,j)) {
+		if (this.checkLegalPlay(i,j) > 0) {
 			this.board[i][j] = this.currentPlayerPiece;
 			flipPieces(i,j);
 			//updateBoard(i, j); // χρειάζονται τα updates ;;;;
@@ -353,24 +362,25 @@ public class Board{
 		}
 	}/* /printBoard() */
 
-
+	
 	////////////////////////////////////////////////////////////////////
 
 	/*
 	 * Calculates the number of potential moves for each player
 	 * 
 	 * */
-	private int mobility(Piece currentPlayerPiece ){
-		int mobilityB= 0;
-		for( int row=0; row<8;row++){
-			for( int col=0; col<8;col++){
-				if (board[row][col] == currentPlayerPiece ){
-					mobilityB = mobilityB + numberOfPotentialMoves(row, col, mobilityB);
+  	int mobility(Piece currentPlayerPiece ){
+		int mobilityB = 0;
+		for( int row=0; row < 7;row++){
+			for( int col=0; col < 7;col++){
+				if (board[row][col] == null ){
+					mobilityB = mobilityB + checkLegalPlay(row,col);
 				}
 			}
 		}
 		return mobilityB;
 	}
+  
 
 	
 	private int numberOfPotentialMoves(int row, int col, int mobilityB) {
@@ -390,7 +400,7 @@ public class Board{
 	 * 
 	 */
 	public int stability(){
-		int stabilityB = 0;
+		
 		Piece otherPiece = ( currentPlayerPiece == Piece.BLACK ) ? Piece.WHITE : Piece.BLACK;
 		Point stepDownDir = new Point (1,0);
 		Point stepRightDir = new Point (0,1);
@@ -440,6 +450,45 @@ public class Board{
 		
 		return 0;
 	}
+	
+	
+	
+	public int discDifference() {
+		return numberOfBlackDisks - numberOfWhiteDisks;
+	}
+	
+	//public int squareWeights() {
+		int[] weights = {
+		         200, -100, 100,  50,  50, 100, -100,  200,
+		        -100, -200, -50, -50, -50, -50, -200, -100,
+		         100,  -50, 100,   0,   0, 100,  -50,  100,
+		          50,  -50,   0,   0,   0,   0,  -50,   50,
+		          50,  -50,   0,   0,   0,   0,  -50,   50,
+		         100,  -50, 100,   0,   0, 100,  -50,  100,
+		        -100, -200, -50, -50, -50, -50, -200, -100,
+		         200, -100, 100,  50,  50, 100, -100,  200,	
+		};
+	//}
+	//Αν θέλουμε αλλάζουμε το return και βαζουμε παραμετρο currentPlayerPiece or smth
+	public int corners(){
+		  int blackCorners = 0;
+		  int whiteCorners = 0;
+		  List <Point> cornerList = new ArrayList<Point>() ;
+		 	 cornerList.add(new Point(0,0));
+		 	 cornerList.add(new Point(0,7));
+		 	 cornerList.add(new Point(7,0));
+		 	 cornerList.add(new Point(7,7));
+		 	 for( Point corners: cornerList) {
+		 			if(board[corners.row][corners.col] == Piece.BLACK){
+		 				blackCorners++;
+		 			} else if (board[corners.row][corners.col] == Piece.WHITE) {
+		 				whiteCorners++;
+		 			}
+		 	 }
+		 	// System.out.print("\nblack corners " + blackCorners);
+		 	// System.out.print("\nwhite corners "+ whiteCorners);
+		 	 return blackCorners - whiteCorners;
+		}
 	////////////////////////////////////////////////////////////////////
 
 	public void copyBoard(Board b) {
@@ -449,12 +498,34 @@ public class Board{
 				this.board[row][col] = newB[row][col];
 			}
 		}
-		// maybe some updates needed ?? 
-		//if (b.getCurrentPlayerPiece() == "White") {
-			
-		//}
+		
+		updateNumberOfDisks();
+		this.counter = b.getCounter();
+		if (b.currentPlayerPiece == Piece.WHITE) {
+			this.currentPlayerPiece = Piece.WHITE;
+		}else {
+			this.currentPlayerPiece = Piece.BLACK;
+		}
 	}
 
+    public int evaluate(){
+        if (counter < 20){
+        return 5*discDifference()
+        		+ 10*mobility(currentPlayerPiece);
+        }else if (counter < 58){ 
+        	return 10*discDifference()
+                    + 2*mobility(currentPlayerPiece)
+                   // + 2*squareWeights()
+                    + 10000*corners()
+        			+ 10000*stability();
+        }else {
+        	return 500*discDifference()
+        			//+ 500*parity()
+        			+10000*corners()
+        			+10000*stability();
+        }
+		
 
+    }
 
 }
