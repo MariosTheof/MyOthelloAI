@@ -59,28 +59,28 @@ public class MinimaxAlphaBeta {
 			int value = 1000;
 			Board[] children = new Board[this.board.mobility(Board.Piece.BLACK)];
 			int c = 0;
-			for (int i = 0; i < 7; i++) {
-				for (int j = 0;j < 7; j++) {
-					if (board.checkLegalPlay(i,j) > 0) {
+			for (int row = 0; row < 7; row++) {
+				for (int col = 0; col < 7; col++) {
+					if (board.checkLegalPlay(row,col) > 0 && board.getBoard()[row][col] == null) {
 						Board childBoard = new Board();
 						childBoard.copyBoard(board);
 						children[c] = childBoard;
-						children[c].placePiece(i, j);
+						children[c].placePiece(row, col);
 						MinimaxAlphaBeta child = new MinimaxAlphaBeta(children[c], this.depth -1 ,this.alpha, this.beta, true);
 						
 						int childMin = child.alphabeta();
 						c++;
 						if (childMin < value) {
 							value = childMin;
-							this.r = i;
-							this.c = j;
+							this.r = row;
+							this.c = col;
 						}
 						if ( value < this.beta) {
 							this.beta = value;
 						}
 						if (this.alpha > this.beta) {
-							i = 8;
-							j = 8;
+							row = 8;
+							col = 8;
 						}
 					}
 				}

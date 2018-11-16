@@ -4,8 +4,9 @@ import java.lang.reflect.Array;
 import java.util.*;
 
 // TODO stability() returns 0; needs fixing
-// TODO copyBoard() probably needs improvement and tweaking // updatesBoard
-// TODO squareWeights()
+
+// TODO win conditions
+// TODO mobility(currentPlayerPiece) η παράμετρος δεν χρησιμοποιείται και χαλάει τα win conditions
 
 public class Board{
 
@@ -17,22 +18,12 @@ public class Board{
 	public Piece[][] board;
 	public Piece currentPlayerPiece;
 	private int counter;
+	
 	public int numberOfWhiteDisks;
 	public int numberOfBlackDisks;
 	
-
-	Point topLeftStartingPointDownDir = new Point(0,0);
-	Point topLeftStartingPointRightDir = new Point(0,0);
-	
-	Point topRightStartingPointDownDir = new Point(0,7);
-	Point topRightStartingPointLeftDir = new Point(0,7);
-	
-	Point bottomLeftStartingPointUpDir = new Point(7,0);
-	Point bottomLeftStartingPointRightDir = new Point(7,0);
-	
-	Point bottomRightStartingPointUpDir = new Point(7,7);
-	Point bottomRightStartingPointLeftDir = new Point(7,7);
-
+	protected boolean[][] stableDiscArray;
+	protected Stack<int[]> stableDiskStack; // unprocessed // will mark stable disks
 
 	public static class Point {
 		public final int row;
@@ -58,8 +49,6 @@ public class Board{
 
 	interface CellHandler {
 		boolean handleCell(int row, int col, Piece piece);
-
-		boolean handleCell(Point step, int row, int col, Piece piece);
 	}
 
 	/*iterateCells() accepts some direction and navigates through it
@@ -76,21 +65,6 @@ public class Board{
 				break;
 			// handler can stop iteration
 			if (handler.handleCell(row, col, piece) == false)
-				break;
-		}
-	}
-
-	void iterateCellsForStability(Point start, Point step, CellHandler handler) {
-		for (int row = start.row + step.row, col = start.col + step.col;
-				isValidPosition(row,col);
-				row += step.row, col += step.col) {
-
-			Piece piece = board[row][col]; 
-			// empty cell
-			if (piece == null) // fillArray() with EMPTY or use NULL
-				break;
-			// handler can stop iteration
-			if (handler.handleCell(step, row, col, piece) == false)
 				break;
 		}
 	}
@@ -120,11 +94,6 @@ public class Board{
 			return directionHasOpponentsPlayerPiece && endsWithMine;
 		}
 
-		@Override
-		public boolean handleCell(Point step, int row, int col, Piece piece) {
-			// TODO Auto-generated method stub
-			return false;
-		}
 
 	}
 
@@ -152,63 +121,11 @@ public class Board{
 			}
 		}
 
-		@Override
-		public boolean handleCell(Point step, int row, int col, Piece piece) {
-			// TODO Auto-generated method stub
-			return false;
-		}
+		
 	}
 
-	class StabilityHandler implements CellHandler {
-		private final Piece myPiece;
 
 
-		public StabilityHandler(Piece myPiece) {
-			this.myPiece = myPiece;
-		}
-
-		public boolean handleCell(Point step,int row, int col, Piece piece) {
-			if (piece == myPiece){				
-				setNewStartingPoint(step,row,col);
-				return true;
-			}
-
-			return false;
-		} 
-
-		public void setNewStartingPoint(Point step, int row, int col){
-			if (step.row == 1 && step.col == 0 && row == 0) {		  
-				topLeftStartingPointDownDir = new Point(row,col);
-			}else if (step.row == 1 && step.col == 0 && row != 0 ){
-				topRightStartingPointDownDir = new Point(row,col);
-			}
-			if (step.row == 0 && step.col == 1 && col == 0 ){
-				topLeftStartingPointRightDir = new Point(row,col);
-			}else if(step.row == 0 && step.col == 1 && col != 0 ){
-				bottomLeftStartingPointRightDir = new Point(row,col);
-			}
-			if (step.row == -1 && step.col == 0 && row == 0){
-				bottomRightStartingPointUpDir = new Point(row,col);
-			}else if (step.row == -1 && step.col == 0 && row != 0){
-				bottomLeftStartingPointUpDir = new Point(row,col);
-			}
-			if (step.row == 0 && step.col == -1 && col == 0 ) {
-				topRightStartingPointLeftDir = new Point(row,col);
-			}else if (step.row == 0 && step.col == -1 && col == 0){
-				topLeftStartingPointRightDir = new Point(row,col);
-			}
-		}
-
-
-
-		@Override
-		public boolean handleCell(int row, int col, Piece piece) {
-			// TODO Auto-generated method stub
-			return false;
-		}
-
-
-	}
 
 	private boolean isValidPosition(int x, int y){
 		if( x < 0 || x >= 8 || y < 0 || y >=  8 ){
@@ -219,7 +136,7 @@ public class Board{
 
 	/*implement CheckCellHandler and iterate
   through all possible directions to see if we can flip in that direction*/
- 	int checkLegalPlay(int row, int col) {
+	int checkLegalPlay(int row, int col) {
 		int checkLegalPlay = 0 ;
 		Piece otherPiece = ( currentPlayerPiece == Piece.BLACK ) ? Piece.WHITE : Piece.BLACK;
 		Point start = new Point(row, col);
@@ -229,7 +146,7 @@ public class Board{
 			iterateCells(start, step, checkCellHandler);
 			if (checkCellHandler.isGoodMove())
 				checkLegalPlay++;
-				
+
 		}
 		return checkLegalPlay;
 	}
@@ -268,11 +185,11 @@ public class Board{
 	public Piece[][] getBoard() {
 		return board;
 	}
-	
+
 	private int getCounter() {
 		return this.counter;
 	}
-	
+
 	public void setBoard(Piece[][] board) {
 		this.board = board;
 	}
@@ -309,7 +226,7 @@ public class Board{
 	}
 
 	public boolean finished(){
-		if(this.counter > 63 /* || legalMovesCounter == 0 */){
+		if(this.counter > 63  || ( mobility(Piece.BLACK) == 0 && mobility(Piece.WHITE) == 0)){
 			return true;
 		}else{
 			return false;
@@ -362,14 +279,14 @@ public class Board{
 		}
 	}/* /printBoard() */
 
-	
+
 	////////////////////////////////////////////////////////////////////
 
 	/*
 	 * Calculates the number of potential moves for each player
 	 * 
 	 * */
-  	int mobility(Piece currentPlayerPiece ){
+	int mobility(Piece currentPlayerPiece ){
 		int mobilityB = 0;
 		for( int row=0; row < 7;row++){
 			for( int col=0; col < 7;col++){
@@ -380,115 +297,85 @@ public class Board{
 		}
 		return mobilityB;
 	}
-  
 
-	
-	private int numberOfPotentialMoves(int row, int col, int mobilityB) {
-		Piece otherPiece = ( currentPlayerPiece == Piece.BLACK ) ? Piece.WHITE : Piece.BLACK;
-		Point start = new Point(row, col);
-		for (Point step : possibleDirections) {
-			// handler is stateful so create new for each direction
-			CheckCellHandler checkCellHandler = new CheckCellHandler(otherPiece);
-			iterateCells(start, step, checkCellHandler);
-			if (checkCellHandler.isGoodMove())
-				mobilityB++;
-		}
-		return mobilityB;
-	}
+
 
 	/*
 	 * 
 	 */
-	public int stability(){
-		
-		Piece otherPiece = ( currentPlayerPiece == Piece.BLACK ) ? Piece.WHITE : Piece.BLACK;
-		Point stepDownDir = new Point (1,0);
-		Point stepRightDir = new Point (0,1);
-		Point stepUpDir = new Point (-1,0);
-		Point stepLeftDir = new Point (0,-1);
-		
-		
-		/* Starting points for both directions of the top left corner. */
-		if (  topLeftStartingPointDownDir != null ){
-			StabilityHandler stabilityCellHandlerDownDir = new StabilityHandler(otherPiece);
-			iterateCellsForStability(topLeftStartingPointDownDir, stepDownDir ,stabilityCellHandlerDownDir );
+	/*public void stability(){
+		stableDiskStack = new Stack<int[]>();
+		for( int row=0; row < 7;row++){
+			for( int col=0; col < 7;col++){
+				if (board[row][col] == currentPlayerPiece ){
+					int [] data = {row, col};
+					stableDiskStack.add(data);
+					this.stableDiscArray[row][col] = true;
+				}
+			}
 		}
-		if ( topLeftStartingPointRightDir != null ) {
-			StabilityHandler stabilityCellHandlerRightDir = new StabilityHandler(otherPiece);
-			iterateCellsForStability(topLeftStartingPointRightDir, stepRightDir ,stabilityCellHandlerRightDir );
+		while(!stableDiskStack.isEmpty()) {
+			int[] data = stableDiskStack.pop();
+			
+			// trying to check if adjacent discs are stable
+			for (int[] line : getAdjacentTiles())
 		}
-		
-		/* Starting points for both directions of the top right corner. */
-		if ( topRightStartingPointDownDir != null ) {
-			StabilityHandler stabilityCellHandlerDownDir = new StabilityHandler(otherPiece);
-			iterateCellsForStability(topRightStartingPointDownDir, stepDownDir ,stabilityCellHandlerDownDir );
-		}
-		if ( topRightStartingPointLeftDir != null ) {
-			StabilityHandler stabilityCellHandlerLeftDir = new StabilityHandler(otherPiece);
-			iterateCellsForStability(topRightStartingPointLeftDir, stepLeftDir ,stabilityCellHandlerLeftDir );
-		}
-		
-		/* Starting points for both directions of the bottom left corner. */
-		if ( bottomLeftStartingPointUpDir != null) {
-			StabilityHandler stabilityCellHandlerUpDir = new StabilityHandler(otherPiece);
-			iterateCellsForStability(bottomLeftStartingPointUpDir, stepUpDir ,stabilityCellHandlerUpDir );
-		}
-		if ( bottomLeftStartingPointRightDir != null){
-			StabilityHandler stabilityCellHandlerRightDir = new StabilityHandler(otherPiece);
-			iterateCellsForStability(bottomLeftStartingPointRightDir, stepRightDir ,stabilityCellHandlerRightDir );
-		}
-		
-		/* Starting points for both directions of the bottom right corner. */
-		if (bottomRightStartingPointLeftDir != null) {
-			StabilityHandler stabilityCellHandlerLeftDir = new StabilityHandler(otherPiece);
-			iterateCellsForStability(bottomRightStartingPointLeftDir, stepLeftDir ,stabilityCellHandlerLeftDir );
-		}
-		if (bottomRightStartingPointUpDir != null) {
-			StabilityHandler stabilityCellHandlerUpDir = new StabilityHandler(otherPiece);
-			iterateCellsForStability(bottomRightStartingPointUpDir, stepUpDir ,stabilityCellHandlerUpDir );
-		}
-		
-		return 0;
-	}
-	
-	
-	
+	}*/
+
+
+
 	public int discDifference() {
 		return numberOfBlackDisks - numberOfWhiteDisks;
 	}
-	
-	//public int squareWeights() {
-		int[] weights = {
-		         200, -100, 100,  50,  50, 100, -100,  200,
-		        -100, -200, -50, -50, -50, -50, -200, -100,
-		         100,  -50, 100,   0,   0, 100,  -50,  100,
-		          50,  -50,   0,   0,   0,   0,  -50,   50,
-		          50,  -50,   0,   0,   0,   0,  -50,   50,
-		         100,  -50, 100,   0,   0, 100,  -50,  100,
-		        -100, -200, -50, -50, -50, -50, -200, -100,
-		         200, -100, 100,  50,  50, 100, -100,  200,	
-		};
-	//}
-	//Αν θέλουμε αλλάζουμε το return και βαζουμε παραμετρο currentPlayerPiece or smth
-	public int corners(){
-		  int blackCorners = 0;
-		  int whiteCorners = 0;
-		  List <Point> cornerList = new ArrayList<Point>() ;
-		 	 cornerList.add(new Point(0,0));
-		 	 cornerList.add(new Point(0,7));
-		 	 cornerList.add(new Point(7,0));
-		 	 cornerList.add(new Point(7,7));
-		 	 for( Point corners: cornerList) {
-		 			if(board[corners.row][corners.col] == Piece.BLACK){
-		 				blackCorners++;
-		 			} else if (board[corners.row][corners.col] == Piece.WHITE) {
-		 				whiteCorners++;
-		 			}
-		 	 }
-		 	// System.out.print("\nblack corners " + blackCorners);
-		 	// System.out.print("\nwhite corners "+ whiteCorners);
-		 	 return blackCorners - whiteCorners;
+
+
+	protected int[][] weights = {
+			{ 120, -20, 20, 5, 5, 20, -20, 120 },
+			{ -20, -40, -5, -5, -5, -5, -40, -20 },
+			{ 20, -5, 1, 5, 3, 3, 15, -5, 20 }, 
+			{ 5, -5, 3, 3, 3, 3, -5, 5 },
+			{ 5, -5, 3, 3, 3, 3, -5, 5 }, 
+			{ 20, -5, 15, 3, 3, 15, -5, 20 },
+			{ -20, -40, -5, -5, -5, -5, -40, -20 },
+			{ 120, -20, 20, 5, 5, 20, -20, 120 }
+	};
+
+	public int squareWeights() {
+		int score = 0;
+		for (int row = 0; row < 7; row++) {
+			for (int col = 0; col < 7; col++ ) {
+				if (board[row][col] == currentPlayerPiece) {
+					score += weights[row][col];
+				}else {
+					score -= weights[row][col];
+				}
+			}
 		}
+		return score;
+	}
+
+
+	//}
+//Αν θέλουμε αλλάζουμε το return και βαζουμε παραμετρο currentPlayerPiece or smth
+	public int corners(){
+		int blackCorners = 0;
+		int whiteCorners = 0;
+		List <Point> cornerList = new ArrayList<Point>() ;
+		cornerList.add(new Point(0,0));
+		cornerList.add(new Point(0,7));
+		cornerList.add(new Point(7,0));
+		cornerList.add(new Point(7,7));
+		for( Point corners: cornerList) {
+			if(board[corners.row][corners.col] == Piece.BLACK){
+				blackCorners++;
+			} else if (board[corners.row][corners.col] == Piece.WHITE) {
+				whiteCorners++;
+			}
+		}
+		// System.out.print("\nblack corners " + blackCorners);
+		// System.out.print("\nwhite corners "+ whiteCorners);
+		return blackCorners - whiteCorners;
+	}
 	////////////////////////////////////////////////////////////////////
 
 	public void copyBoard(Board b) {
@@ -498,7 +385,7 @@ public class Board{
 				this.board[row][col] = newB[row][col];
 			}
 		}
-		
+
 		updateNumberOfDisks();
 		this.counter = b.getCounter();
 		if (b.currentPlayerPiece == Piece.WHITE) {
@@ -508,24 +395,25 @@ public class Board{
 		}
 	}
 
-    public int evaluate(){
-        if (counter < 20){
-        return 5*discDifference()
-        		+ 10*mobility(currentPlayerPiece);
-        }else if (counter < 58){ 
-        	return 10*discDifference()
-                    + 2*mobility(currentPlayerPiece)
-                   // + 2*squareWeights()
-                    + 10000*corners()
-        			+ 10000*stability();
-        }else {
-        	return 500*discDifference()
-        			//+ 500*parity()
-        			+10000*corners()
-        			+10000*stability();
-        }
-		
+	public int evaluate(){
+		if (counter < 20){
+			return 5*discDifference()
+					+ 10*mobility(currentPlayerPiece)
+					+ 10000*corners();
+		}else if (counter < 58){ 
+			return 10*discDifference()
+					+ 2*mobility(currentPlayerPiece)
+					+ 2*squareWeights()
+					+ 10000*corners()
+					+ 10000*stability();
+		}else {
+			return 500*discDifference()
+					//+ 500*parity()
+					+10000*corners()
+					+10000*stability();
+		}
 
-    }
+
+	}
 
 }

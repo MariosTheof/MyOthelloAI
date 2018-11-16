@@ -41,7 +41,7 @@ public class Main {
           System.out.println(board.getCurrentPlayerPiece() + " player is playing \n");
           System.out.println("Where do you want to place the next piece? ");
           
-          MinimaxAlphaBeta Ai = new MinimaxAlphaBeta(board, 1, -1000, 1000, true);
+          MinimaxAlphaBeta Ai = new MinimaxAlphaBeta(board, 3, -1000, 1000, true);
           Ai.alphabeta();
           board.placePiece(Ai.getRow(), Ai.getCol());
           System.out.println("Row " + (Ai.getRow()+1));
