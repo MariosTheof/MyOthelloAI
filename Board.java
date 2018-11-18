@@ -3,7 +3,6 @@ package Othello;
 import java.util.*;
 
 // TODO win conditions
-// TODO mobility(currentPlayerPiece) η παράμετρος δεν χρησιμοποιείται και χαλάει τα win conditions
 
 public class Board{
 
@@ -19,8 +18,13 @@ public class Board{
 	public int numberOfWhiteDisks;
 	public int numberOfBlackDisks;
 	
-	protected boolean[][] stableDiscArray;
-	protected Stack<int[]> stableDiskStack; // unprocessed // will mark stable disks
+	private static final Point cornerArray[] = new Point[]{
+			new Point(0,0),
+			new Point(0,7),
+			new Point (7,0),
+			new Point(7,7),
+	};
+	
 
 	public static class Point {
 		public final int row;
@@ -177,9 +181,12 @@ public class Board{
 		this.board[4][3] = Piece.BLACK;
 		this.board[4][4] = Piece.WHITE;
 		// Test input for mobility, stability, discDif functions.
-	//			this.board[2][2] = Piece.WHITE;
-	//			this.board[1][1] = Piece.BLACK;
-				
+			//	this.board[2][2] = Piece.WHITE;
+			//	this.board[1][1] = Piece.BLACK;
+		/*this.board[1][0]= Piece.WHITE;
+		this.board[2][0] = Piece.BLACK;
+		this.board[3][0] = Piece.BLACK; */
+		
 
 	}
 
@@ -195,7 +202,8 @@ public class Board{
 		this.board = board;
 	}
 
-	public boolean placePiece(int i, int j) {
+	//placePieceForPlayer() & placePieceForAI()
+	public boolean placePieceForPlayer(int i, int j) {
 		if (this.checkLegalPlay(i,j) > 0) {
 			this.board[i][j] = this.currentPlayerPiece;
 			flipPieces(i,j);
@@ -208,6 +216,14 @@ public class Board{
 			System.out.println("Illegal piece placement \n");
 			return false;
 		}
+	}
+	
+	public void placePieceForAi(int i, int j) {
+		this.board[i][j] = this.currentPlayerPiece;
+		flipPieces(i,j);
+		this.counter++;
+		updateNumberOfDisks();
+		changeTurn();
 	}
 
 	public String getCurrentPlayerPiece(){
@@ -396,17 +412,12 @@ public class Board{
 	}
 
 
-	
-	//Αν θέλουμε αλλάζουμε το return και βαζουμε παραμετρο currentPlayerPiece or smth
 	public int corners(){
 		int blackCorners = 0;
 		int whiteCorners = 0;
-		List <Point> cornerList = new ArrayList<Point>() ;
-		cornerList.add(new Point(0,0));
-		cornerList.add(new Point(0,7));
-		cornerList.add(new Point(7,0));
-		cornerList.add(new Point(7,7));
-		for( Point corners: cornerList) {
+		
+		
+		for( Point corners: cornerArray) {
 			if(board[corners.row][corners.col] == Piece.BLACK){
 				blackCorners++;
 			} else if (board[corners.row][corners.col] == Piece.WHITE) {
