@@ -1,9 +1,6 @@
 package Othello;
 
-import java.lang.reflect.Array;
 import java.util.*;
-
-// TODO stability() returns 0; needs fixing
 
 // TODO win conditions
 // TODO mobility(currentPlayerPiece) η παράμετρος δεν χρησιμοποιείται και χαλάει τα win conditions
@@ -174,11 +171,15 @@ public class Board{
 		this.numberOfBlackDisks = 2;
 		this.numberOfWhiteDisks = 2;
 		// Αρχικές θέσεις
-		//  fillArray(this.board);
+		
 		this.board[3][3] = Piece.WHITE;
 		this.board[3][4] = Piece.BLACK;
 		this.board[4][3] = Piece.BLACK;
 		this.board[4][4] = Piece.WHITE;
+		// Test input for mobility, stability, discDif functions.
+	//			this.board[2][2] = Piece.WHITE;
+	//			this.board[1][1] = Piece.BLACK;
+				
 
 	}
 
@@ -300,28 +301,68 @@ public class Board{
 
 
 
-	/*
-	 * 
-	 */
-	/*public void stability(){
-		stableDiskStack = new Stack<int[]>();
-		for( int row=0; row < 7;row++){
-			for( int col=0; col < 7;col++){
-				if (board[row][col] == currentPlayerPiece ){
-					int [] data = {row, col};
-					stableDiskStack.add(data);
-					this.stableDiscArray[row][col] = true;
+	//Stability function: Checks whether corner and edges cells are stable.
+	  public int stability(){
+		  int currStab = 0;
+		  int col1 = 1; int row1 = 1;  int col2 = 1; int row2 = 1;
+		  if (board[0][0]== currentPlayerPiece){
+			  currStab++;
+			  while(board[0][col1]== currentPlayerPiece) {
+				  currStab++; col1++;
+			  }
+			  while(board[row1][0]== currentPlayerPiece) {
+				  currStab++; row1++;
+			  }
+		  }
+		  if (board[0][7]== currentPlayerPiece){
+			  currStab++;
+			  int i = 1;
+			while (board[0][7-i] == currentPlayerPiece) {
+				if (i!=col1) {
+					currStab++; i++;
+				}else {
+					break;
 				}
 			}
-		}
-		while(!stableDiskStack.isEmpty()) {
-			int[] data = stableDiskStack.pop();
-			
-			// trying to check if adjacent discs are stable
-			for (int[] line : getAdjacentTiles())
-		}
-	}*/
-
+			while(board[row2][7] == currentPlayerPiece) {
+				currStab++; row2++;
+			 }			  					
+		  }
+		  if (board[7][0]== currentPlayerPiece){
+			  currStab++;
+			  int i = 1;
+			  while (board[7-i][0]== currentPlayerPiece){
+				  if (i!=row1) {
+					  currStab++; i++;
+				  }else {
+					  break;
+				  }
+			  }
+			  while(board[7][col2]== currentPlayerPiece) {
+					  currStab++; col2++;
+			  }	
+		  }
+		  if (board[7][7]== currentPlayerPiece){
+			  currStab++;
+			  int i = 6;
+			  while(board[i][7]== currentPlayerPiece) {
+				  if (i!=row2) {
+					  currStab++; i--;
+				  } else {
+					  break;
+				  }
+			  }
+			  i=6;
+			  while(board[7][i]== currentPlayerPiece) {
+				if (i!=col2) {
+					currStab++; i--;
+				}else {
+					break;
+				}
+			}
+		  }
+		  return currStab;
+	  }
 
 
 	public int discDifference() {
@@ -355,8 +396,8 @@ public class Board{
 	}
 
 
-	//}
-//Αν θέλουμε αλλάζουμε το return και βαζουμε παραμετρο currentPlayerPiece or smth
+	
+	//Αν θέλουμε αλλάζουμε το return και βαζουμε παραμετρο currentPlayerPiece or smth
 	public int corners(){
 		int blackCorners = 0;
 		int whiteCorners = 0;
@@ -372,9 +413,13 @@ public class Board{
 				whiteCorners++;
 			}
 		}
-		// System.out.print("\nblack corners " + blackCorners);
-		// System.out.print("\nwhite corners "+ whiteCorners);
-		return blackCorners - whiteCorners;
+		if (currentPlayerPiece == Piece.BLACK) {
+			return 100 * (blackCorners - whiteCorners)
+		            / (blackCorners + whiteCorners + 1);
+		}else {
+			return 100 * (whiteCorners - blackCorners)
+	            / (blackCorners + whiteCorners + 1);
+		}
 	}
 	////////////////////////////////////////////////////////////////////
 
@@ -389,31 +434,29 @@ public class Board{
 		updateNumberOfDisks();
 		this.counter = b.getCounter();
 		if (b.currentPlayerPiece == Piece.WHITE) {
-			this.currentPlayerPiece = Piece.WHITE;
-		}else {
 			this.currentPlayerPiece = Piece.BLACK;
+		}else {
+			this.currentPlayerPiece = Piece.WHITE;
 		}
 	}
 
 	public int evaluate(){
 		if (counter < 20){
-			return 5*discDifference()
+			return 	20*squareWeights()
 					+ 10*mobility(currentPlayerPiece)
-					+ 10000*corners();
+					+ 10000*corners()
+					+ 10000*stability();
 		}else if (counter < 58){ 
 			return 10*discDifference()
 					+ 2*mobility(currentPlayerPiece)
-					+ 2*squareWeights()
+					+ 10*squareWeights()
 					+ 10000*corners()
 					+ 10000*stability();
 		}else {
 			return 500*discDifference()
-					//+ 500*parity()
 					+10000*corners()
 					+10000*stability();
 		}
-
-
 	}
 
 }

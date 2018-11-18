@@ -26,7 +26,7 @@ public class MinimaxAlphaBeta {
 			Board [] children = new Board[this.board.mobility(Board.Piece.WHITE)];
 			int c = 0;
 			 /// Μάλλον δεν χρειαζομαι τα fors επειδη έχω τους τρομερούς χαντλερς
-			for (int row = 0; row < 7; row++) { //άλλαξε i/j σε col/row
+			for (int row = 0; row < 7; row++) { 
 				for (int col = 0; col < 7; col++) {
 					if (board.checkLegalPlay(row,col) > 0 && board.getBoard()[row][col] == null) {
 						Board childBoard = new Board();
