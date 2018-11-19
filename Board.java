@@ -12,19 +12,19 @@ public class Board{
 	}
 
 	public Piece[][] board;
-	public Piece currentPlayerPiece;
+	private Piece currentPlayerPiece;
 	private int counter;
-	
+
 	public int numberOfWhiteDisks;
 	public int numberOfBlackDisks;
-	
+
 	private static final Point cornerArray[] = new Point[]{
 			new Point(0,0),
 			new Point(0,7),
 			new Point (7,0),
 			new Point(7,7),
 	};
-	
+
 
 	public static class Point {
 		public final int row;
@@ -38,14 +38,14 @@ public class Board{
 
 	/*Όλες οι κατευθύνσεις αντιπροσωπευμένες από έναν πίνακα*/
 	private static final Point[] possibleDirections = new Point[]{
-			new Point(1, 0),
-			new Point(1, 1),
-			new Point(0, 1),
-			new Point(-1, 1),
-			new Point(-1, 0),
-			new Point(-1, -1),
-			new Point(0, -1),
-			new Point(1, -1),
+			new Point(1, 0), // κάτω
+			new Point(1, 1), // κάτω & δεξιά
+			new Point(0, 1), // δεξιά
+			new Point(-1, 1), // δεξιά & πάνω
+			new Point(-1, 0), // πάνω
+			new Point(-1, -1), // πάνω & αριστερά
+			new Point(0, -1), // αριστερά
+			new Point(1, -1), //κάτω & αριστερά
 	};
 
 	interface CellHandler {
@@ -122,7 +122,7 @@ public class Board{
 			}
 		}
 
-		
+
 	}
 
 
@@ -175,18 +175,18 @@ public class Board{
 		this.numberOfBlackDisks = 2;
 		this.numberOfWhiteDisks = 2;
 		// Αρχικές θέσεις
-		
+
 		this.board[3][3] = Piece.WHITE;
 		this.board[3][4] = Piece.BLACK;
 		this.board[4][3] = Piece.BLACK;
 		this.board[4][4] = Piece.WHITE;
 		// Test input for mobility, stability, discDif functions.
-			//	this.board[2][2] = Piece.WHITE;
-			//	this.board[1][1] = Piece.BLACK;
+		//	this.board[2][2] = Piece.WHITE;
+		//	this.board[1][1] = Piece.BLACK;
 		/*this.board[1][0]= Piece.WHITE;
 		this.board[2][0] = Piece.BLACK;
 		this.board[3][0] = Piece.BLACK; */
-		
+
 
 	}
 
@@ -217,7 +217,7 @@ public class Board{
 			return false;
 		}
 	}
-	
+
 	public void placePieceForAi(int i, int j) {
 		this.board[i][j] = this.currentPlayerPiece;
 		flipPieces(i,j);
@@ -234,7 +234,7 @@ public class Board{
 		}
 	}
 
-	private void changeTurn() {
+	void changeTurn() {
 		if (currentPlayerPiece == Piece.BLACK){
 			currentPlayerPiece = Piece.WHITE;
 		} else {
@@ -242,11 +242,13 @@ public class Board{
 		}
 	}
 
-	public boolean finished(){
-		if(this.counter > 63  || ( mobility(Piece.BLACK) == 0 && mobility(Piece.WHITE) == 0)){
-			return true;
-		}else{
-			return false;
+	public int finished(){
+		if(this.counter > 63) return -1;
+		
+		if ( mobility() == 0 ) { // no moves for currentPlayer
+			return 0;
+		}else {
+			return 1;
 		}
 	}
 
@@ -303,7 +305,7 @@ public class Board{
 	 * Calculates the number of potential moves for each player
 	 * 
 	 * */
-	int mobility(Piece currentPlayerPiece ){
+	int mobility(){
 		int mobilityB = 0;
 		for( int row=0; row < 7;row++){
 			for( int col=0; col < 7;col++){
@@ -318,21 +320,22 @@ public class Board{
 
 
 	//Stability function: Checks whether corner and edges cells are stable.
-	  public int stability(){
-		  int currStab = 0;
-		  int col1 = 1; int row1 = 1;  int col2 = 1; int row2 = 1;
-		  if (board[0][0]== currentPlayerPiece){
-			  currStab++;
-			  while(board[0][col1]== currentPlayerPiece) {
-				  currStab++; col1++;
-			  }
-			  while(board[row1][0]== currentPlayerPiece) {
-				  currStab++; row1++;
-			  }
-		  }
-		  if (board[0][7]== currentPlayerPiece){
-			  currStab++;
-			  int i = 1;
+	public int stability(){
+		int currStab = 0;
+		int col1 = 1; int row1 = 1;  int col2 = 1; int row2 = 1;
+		changeTurn();
+		if (board[0][0]== currentPlayerPiece){
+			currStab++;
+			while(board[0][col1]== currentPlayerPiece) {
+				currStab++; col1++;
+			}
+			while(board[row1][0]== currentPlayerPiece) {
+				currStab++; row1++;
+			}
+		}
+		if (board[0][7]== currentPlayerPiece){
+			currStab++;
+			int i = 1;
 			while (board[0][7-i] == currentPlayerPiece) {
 				if (i!=col1) {
 					currStab++; i++;
@@ -342,43 +345,43 @@ public class Board{
 			}
 			while(board[row2][7] == currentPlayerPiece) {
 				currStab++; row2++;
-			 }			  					
-		  }
-		  if (board[7][0]== currentPlayerPiece){
-			  currStab++;
-			  int i = 1;
-			  while (board[7-i][0]== currentPlayerPiece){
-				  if (i!=row1) {
-					  currStab++; i++;
-				  }else {
-					  break;
-				  }
-			  }
-			  while(board[7][col2]== currentPlayerPiece) {
-					  currStab++; col2++;
-			  }	
-		  }
-		  if (board[7][7]== currentPlayerPiece){
-			  currStab++;
-			  int i = 6;
-			  while(board[i][7]== currentPlayerPiece) {
-				  if (i!=row2) {
-					  currStab++; i--;
-				  } else {
-					  break;
-				  }
-			  }
-			  i=6;
-			  while(board[7][i]== currentPlayerPiece) {
+			}			  					
+		}
+		if (board[7][0]== currentPlayerPiece){
+			currStab++;
+			int i = 1;
+			while (board[7-i][0]== currentPlayerPiece){
+				if (i!=row1) {
+					currStab++; i++;
+				}else {
+					break;
+				}
+			}
+			while(board[7][col2]== currentPlayerPiece) {
+				currStab++; col2++;
+			}	
+		}
+		if (board[7][7]== currentPlayerPiece){
+			currStab++;
+			int i = 6;
+			while(board[i][7]== currentPlayerPiece) {
+				if (i!=row2) {
+					currStab++; i--;
+				} else {
+					break;
+				}
+			}
+			i=6;
+			while(board[7][i]== currentPlayerPiece) {
 				if (i!=col2) {
 					currStab++; i--;
 				}else {
 					break;
 				}
 			}
-		  }
-		  return currStab;
-	  }
+		}
+		return currStab;
+	}
 
 
 	public int discDifference() {
@@ -415,8 +418,8 @@ public class Board{
 	public int corners(){
 		int blackCorners = 0;
 		int whiteCorners = 0;
-		
-		
+
+
 		for( Point corners: cornerArray) {
 			if(board[corners.row][corners.col] == Piece.BLACK){
 				blackCorners++;
@@ -425,11 +428,11 @@ public class Board{
 			}
 		}
 		if (currentPlayerPiece == Piece.BLACK) {
-			return 100 * (blackCorners - whiteCorners)
-		            / (blackCorners + whiteCorners + 1);
-		}else {
 			return 100 * (whiteCorners - blackCorners)
-	            / (blackCorners + whiteCorners + 1);
+					/ (blackCorners + whiteCorners + 1);
+		}else {
+			return 100 * (blackCorners - whiteCorners)
+					/ (blackCorners + whiteCorners + 1);
 		}
 	}
 	////////////////////////////////////////////////////////////////////
@@ -454,12 +457,12 @@ public class Board{
 	public int evaluate(){
 		if (counter < 20){
 			return 	20*squareWeights()
-					+ 10*mobility(currentPlayerPiece)
+					+ 10*mobility()
 					+ 10000*corners()
 					+ 10000*stability();
 		}else if (counter < 58){ 
 			return 10*discDifference()
-					+ 2*mobility(currentPlayerPiece)
+					+ 2*mobility()
 					+ 10*squareWeights()
 					+ 10000*corners()
 					+ 10000*stability();

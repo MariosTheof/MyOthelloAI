@@ -19,12 +19,14 @@ public class MinimaxAlphaBeta {
 
 	public int alphabeta() {
 		if (depth == 0 /*|| board.counter == 64*/) {
-			System.out.println(this.board.evaluate());
+			//System.out.println("Evaluation() : " + this.board.evaluate());
+			//System.out.println("Stability() : " + this.board.stability());
+			//this.board.printBoard();
 			return this.board.evaluate();
 		}
 		else if(maximize) {
-			int value = -1000;
-			Board [] children = new Board[this.board.mobility(Board.Piece.WHITE)];
+			int value = -1000000;
+			Board [] children = new Board[this.board.mobility()];
 			int c = 0;
 			/// Μάλλον δεν χρειαζομαι τα fors επειδη έχω τους τρομερούς χαντλερς
 			for (int row = 0; row < 7; row++) { 
@@ -45,10 +47,10 @@ public class MinimaxAlphaBeta {
 								this.r = row; // row
 								this.c = col; // column
 							}
-							if (value < this.beta ) {
-								this.beta = value;
+							if (value > this.alpha ) {
+								this.alpha = value;
 							}
-							if (this.alpha > this.beta) {
+							if (this.alpha >= this.beta) { // break
 								row = 8;
 								col = 8;
 							}
@@ -59,8 +61,8 @@ public class MinimaxAlphaBeta {
 			return value;
 		}
 		else { // minimize
-			int value = 1000;
-			Board[] children = new Board[this.board.mobility(Board.Piece.BLACK)];
+			int value = 1000000;
+			Board[] children = new Board[this.board.mobility()];
 			int c = 0;
 			for (int row = 0; row < 7; row++) {
 				for (int col = 0; col < 7; col++) {
@@ -75,13 +77,12 @@ public class MinimaxAlphaBeta {
 						c++;
 						if (childMin < value) {
 							value = childMin;
-							this.r = row;
-							this.c = col;
+							
 						}
 						if ( value < this.beta) {
 							this.beta = value;
 						}
-						if (this.alpha > this.beta) {
+						if (this.alpha >= this.beta) { //break
 							row = 8;
 							col = 8;
 						}
